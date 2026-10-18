@@ -1,0 +1,56 @@
+--- a/crates/ui-egui/src/panels/monitor_view.rs
++++ b/crates/ui-egui/src/panels/monitor_view.rs
+@@ -366,6 +366,19 @@
+         // about 10% per wheel notch (40 points), exponential in the wheel travel so a notch out
+         // undoes a notch in exactly
+         let wheel = crate::panels::timeline::wheel_input(&ctx);
++        if crate::android_finger_navigation(ui.ctx()) {
++            if pic.width() > 0.0 && fw > 0.0 {
++                let cur = pic.width() * ppp / fw;
++                let z = (cur * wheel.pinch).clamp(ZOOMS[0].1, ZOOMS[ZOOMS.len() - 1].1);
++                let k = z / cur;
++                let centre = p - (p - pic.center()) * k + wheel.delta;
++                let max = ((pic.size() * k - area.size()) / 2.0).max(Vec2::ZERO);
++                let v = view_mut(app, w);
++                v.zoom = Some(z);
++                v.pan = [(centre.x - area.center().x).clamp(-max.x, max.x), (centre.y - area.center().y).clamp(-max.y, max.y)];
++            }
++            return;
++        }
+         let f = if (wheel.pinch - 1.0).abs() > 1e-4 { wheel.pinch } else { (wheel.delta.y * 1.1_f32.ln() / 40.0).exp().clamp(0.5, 2.0) };
+         if (f - 1.0).abs() > 1e-4 && pic.width() > 0.0 && fw > 0.0 {
+             let cur = pic.width() * ppp / fw;
+--- a/crates/ui-egui/src/panels/timeline.rs
++++ b/crates/ui-egui/src/panels/timeline.rs
+@@ -2258,7 +2258,19 @@
+             let v = &mut app.ui.timeline;
+             v.target_pps = (v.target_pps * f).clamp(0.05, 24_000.0);
+             app.tl.zoom_anchor = Some((anchor_t, p.x));
+-        } else if w.delta != egui::Vec2::ZERO {
++        }
++        if crate::android_finger_navigation(ui.ctx()) {
++            let v = &mut app.ui.timeline;
++            let limit = max_scroll(seq.duration().seconds(), layout.content.width(), v.target_pps);
++            if let Some((anchor, x)) = app.tl.zoom_anchor.as_mut() {
++                *x += w.delta.x;
++                let _ = anchor;
++            } else {
++                v.target_scroll = (v.target_scroll - w.delta.x as f64 / v.pps).clamp(0.0, limit);
++                v.scroll = v.target_scroll;
++            }
++            if p.y < layout.split_y { v.v_scroll += w.delta.y; } else { v.a_scroll -= w.delta.y; }
++        } else if (w.pinch - 1.0).abs() <= 1e-4 && !w.alt && w.delta != egui::Vec2::ZERO {
+             let wheel_sideways = (app.session.prefs.timeline.mouse_scrolling == "horizontal") != w.command;
+             let sideways = if w.delta.x.abs() > w.delta.y.abs() {
+                 Some(w.delta.x)
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -2812,3 +2812,8 @@
+         assert_eq!(last(&sent, "edit.redo"), Some(true), "the undone edit can be redone");
+     }
+ }
++
++// Set only by the Android shell; desktop mouse/trackpad preferences stay unchanged.
++pub(crate) fn android_finger_navigation(ctx: &egui::Context) -> bool {
++    ctx.data(|d| d.get_temp::<bool>(egui::Id::new("craft.android.finger-navigation")).unwrap_or(false))
++}

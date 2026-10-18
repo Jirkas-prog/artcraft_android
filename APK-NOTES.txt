@@ -5,6 +5,12 @@ LightCraft, PdfCraft, PhotoCraft, SoundCraft, VectorCraft a WordCraft.
 ARM64 (arm64-v8a), minimum Android 9 / API 28, cílové SDK 35.
 Craft Hub používá Android 10 / API 29 nebo novější.
 
+Aktualizace touch1: tažení jedním prstem posouvá obsah; podržení přibližně
+půl sekundy a tažení provádí výběr nebo práci zvoleného nástroje. Dva prsty
+současně přibližují a posouvají. Krátké klepnutí zůstává kliknutím.
+V grafických editorech zvolte nástroj výběru, chcete-li podržením označovat.
+Aktualizaci všech aplikací spustíte v Craft Hubu přes Obnovit / Aktualizovat vše.
+
 Zdroje byly staženy 18. 10. 2026. Přesné revize jsou v sources.json;
 aktuální kontrolní součty a verze APK jsou v catalog.json a SHA256SUMS.txt.
 Použit byl komunitní port https://github.com/MostafaXS1/artcraft-android .

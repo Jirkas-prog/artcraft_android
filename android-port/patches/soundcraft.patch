@@ -1,0 +1,26 @@
+--- a/crates/ui-egui/src/edit_window.rs
++++ b/crates/ui-egui/src/edit_window.rs
+@@ -349,10 +349,10 @@
+         let _ = app.engine.execute("view.zoom_by", &json!({"factor": zoom, "x": p.x.clamp(tl.min.x, tl.max.x) - tl.min.x}));
+     }
+     let horizontal = swipe.x > swipe.y;
+-    if horizontal && delta.x != 0.0 {
++    if (horizontal || crate::android_finger_navigation(ui.ctx())) && delta.x != 0.0 {
+         pan(app, -f64::from(delta.x));
+     }
+-    if !horizontal && delta.y != 0.0 {
++    if (!horizontal || crate::android_finger_navigation(ui.ctx())) && delta.y != 0.0 {
+         app.edit_layout.scroll_by(-delta.y, tl.height());
+     }
+ }
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -1568,3 +1568,8 @@
+         assert!((speed(&app) - 1.0).abs() < 1e-3, "a half-speed pass that ends on its own restores full speed");
+     }
+ }
++
++// Set only by the Android shell; desktop mouse/trackpad preferences stay unchanged.
++pub(crate) fn android_finger_navigation(ctx: &egui::Context) -> bool {
++    ctx.data(|d| d.get_temp::<bool>(egui::Id::new("craft.android.finger-navigation")).unwrap_or(false))
++}

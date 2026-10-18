@@ -1,0 +1,37 @@
+--- a/crates/ui-egui/src/canvas.rs
++++ b/crates/ui-egui/src/canvas.rs
+@@ -1088,7 +1088,10 @@
+     let wheel_area = if app.session.view.read_mode { full } else { area };
+     let hovered = wheel_hovered(ui.rect_contains_pointer(wheel_area), ui.ctx().dragged_id().is_some(), app.canvas.drag_selecting());
+     let notch = crate::scroll::notch_px(app.canvas.scale / PX_PER_PT);
+-    let wheel_delta = if app.session.view.read_mode {
++    let wheel_delta = if crate::android_finger_navigation(ui.ctx()) {
++        app.canvas.wheel.cancel();
++        if hovered { ui.input(|i| i.smooth_scroll_delta) } else { egui::Vec2::ZERO }
++    } else if app.session.view.read_mode {
+         let turns = ui.input(|i| read_wheel_turns(&i.events, hovered, &mut app.canvas.read_wheel_accum));
+         for _ in 0..turns.unsigned_abs() {
+             turn_read_page(app, turns.signum() as f32);
+@@ -1153,7 +1156,10 @@
+         let step = app.session.view.read_width * geo.scale + GAP;
+         let snapped = if step.is_finite() && step > 0.0 { vec2((before.x / step).round() * step, 0.0) } else { egui::Vec2::ZERO };
+         let after = match app.canvas.scroll_request.take() {
+-            Some(request) => request.clamp(egui::Vec2::ZERO, app.canvas.scroll_max),
++            Some(request) => {
++                let d = if crate::android_finger_navigation(ui.ctx()) && anchored { delta } else { egui::Vec2::ZERO };
++                clamped_scroll(request, d, app.canvas.scroll_max)
++            },
+             None if app.session.view.read_mode => snapped.clamp(egui::Vec2::ZERO, app.canvas.scroll_max),
+             None => clamped_scroll(before, delta, app.canvas.scroll_max),
+         };
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -7902,3 +7902,8 @@
+         assert!(h.state().session.view.read_mode && shown(&h, "Focus"), "Immersive Reader keeps the status bar");
+     }
+ }
++
++// Set only by the Android shell; desktop mouse/trackpad preferences stay unchanged.
++pub(crate) fn android_finger_navigation(ctx: &egui::Context) -> bool {
++    ctx.data(|d| d.get_temp::<bool>(egui::Id::new("craft.android.finger-navigation")).unwrap_or(false))
++}

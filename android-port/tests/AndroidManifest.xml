@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cz.jirkas.craftgestureprobe">
+    <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35" />
+    <application android:label="Craft gesture QA" android:theme="@android:style/Theme.Material.NoActionBar" />
+    <instrumentation android:name=".GestureProbe" android:targetPackage="cz.jirkas.craftgestureprobe" />
+</manifest>

@@ -1,0 +1,11 @@
+[package]
+name = "craft-android-gestures"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+egui = "=0.36.2"
+
+[lib]
+path = "android_touch.rs"

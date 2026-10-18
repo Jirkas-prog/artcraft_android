@@ -1,0 +1,72 @@
+--- a/crates/ui-egui/src/panels/viewer.rs
++++ b/crates/ui-egui/src/panels/viewer.rs
+@@ -1398,7 +1398,8 @@
+         };
+         ctx.set_cursor_icon(cursor);
+         // Scroll wheel zooms around the pointer.
+-        let scroll = ui.input(|i| i.smooth_scroll_delta.y + i.zoom_delta().ln() * 300.0);
++        let finger_navigation = crate::android_finger_navigation(ui.ctx());
++        let scroll = ui.input(|i| (if finger_navigation { 0.0 } else { i.smooth_scroll_delta.y }) + i.zoom_delta().ln() * 300.0);
+         if scroll.abs() > 0.1 && area.contains(hp) {
+             let k = (scroll / 300.0).exp();
+             let nz = (zoom * k).clamp(0.01, 32.0);
+@@ -1408,6 +1409,12 @@
+             let pan = new_center - area.center();
+             app.ui.viewer.zoom = Some(nz);
+             app.ui.viewer.pan = [pan.x, pan.y];
++        }
++        if finger_navigation && area.contains(hp) {
++            let d = ui.input(|i| i.smooth_scroll_delta);
++            app.ui.viewer.zoom.get_or_insert(zoom);
++            app.ui.viewer.pan[0] += d.x;
++            app.ui.viewer.pan[1] += d.y;
+         }
+     } else {
+         app.pointer_comp = None;
+--- a/crates/ui-egui/src/panels/layer_panel.rs
++++ b/crates/ui-egui/src/panels/layer_panel.rs
+@@ -215,9 +215,16 @@
+     // tool; the Hand tool or Space-drag pans and the Zoom tool clicks zoom in (Alt: out).
+     let hovered = ui.rect_contains_pointer(area);
+     if let Some(hp) = ui.input(|i| i.pointer.hover_pos()).filter(|_| hovered) {
+-        let scroll = ui.input(|i| i.smooth_scroll_delta.y + i.zoom_delta().ln() * 300.0);
++        let finger_navigation = crate::android_finger_navigation(ui.ctx());
++        let scroll = ui.input(|i| (if finger_navigation { 0.0 } else { i.smooth_scroll_delta.y }) + i.zoom_delta().ln() * 300.0);
+         if scroll.is_finite() && scroll.abs() > 0.1 {
+             zoom_at(app, area, [lw, lh], hp, to_layer(hp), zoom as f32 * (scroll / 300.0).exp());
++        }
++        if finger_navigation {
++            let d = ui.input(|i| i.smooth_scroll_delta);
++            app.ui.layer_zoom.get_or_insert(zoom as f32);
++            app.ui.layer_pan[0] += d.x;
++            app.ui.layer_pan[1] += d.y;
+         }
+     }
+     // A middle-drag pans with any tool; painting and Roto Brush strokes don't run meanwhile.
+--- a/crates/ui-egui/src/panels/timeline.rs
++++ b/crates/ui-egui/src/panels/timeline.rs
+@@ -1908,6 +1908,13 @@
+         let at_x = ui.input(|i| i.pointer.hover_pos()).map(|p| p.x).unwrap_or(graph_x0);
+         if (pinch - 1.0).abs() > 1e-4 {
+             set_zoom(&mut app.ui.timeline, &comp, tm.pps * pinch, fit_pps, tm.t(at_x), (at_x - tm.x0) as f64);
++        }
++        if crate::android_finger_navigation(ui.ctx()) {
++            app.ui.timeline.scroll_y = (app.ui.timeline.scroll_y - dy).clamp(0.0, max_scroll);
++            let scale = app.ui.timeline.pps.unwrap_or(pps).max(0.0001);
++            app.ui.timeline.start = (app.ui.timeline.start - dx as f64 / scale).max(0.0);
++        } else if (pinch - 1.0).abs() > 1e-4 {
++            // The desktop pinch was handled above.
+         } else if zoom && dy.abs() > 0.0 {
+             // Alt+wheel zooms around the pointer, out until the whole comp shows.
+             set_zoom(&mut app.ui.timeline, &comp, tm.pps * (dy as f64 / 200.0).exp(), fit_pps, tm.t(at_x), (at_x - tm.x0) as f64);
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -2172,3 +2172,8 @@
+         assert_eq!(app.ui.theme, ThemeKind::Darker);
+     }
+ }
++
++// Set only by the Android shell; desktop mouse/trackpad preferences stay unchanged.
++pub(crate) fn android_finger_navigation(ctx: &egui::Context) -> bool {
++    ctx.data(|d| d.get_temp::<bool>(egui::Id::new("craft.android.finger-navigation")).unwrap_or(false))
++}
