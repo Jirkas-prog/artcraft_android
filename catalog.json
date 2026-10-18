@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-18T19:41:08.301375+00:00",
+  "updatedAt": "2026-10-18T19:51:43.605453+00:00",
   "apps": [
     {
       "packageId": "com.artcraft.cadcraft",
@@ -19,13 +19,13 @@
       "packageId": "cz.jirkas.crafthub",
       "name": "Craft Hub",
       "description": "Instalace, aktualizace a spouštění celé sady.",
-      "versionCode": 10000,
-      "versionName": "1.0.0",
+      "versionCode": 10001,
+      "versionName": "1.0.1",
       "minSdk": 29,
       "abi": "any",
-      "apk": "apk/craft-hub-10000.apk",
+      "apk": "apk/craft-hub-10001.apk",
       "size": 932779,
-      "sha256": "039f89071a8d52c766e97af05023697725c9073e5fb3c3f43cdcec3ff2eb0287",
+      "sha256": "7d7ccd9bad93bb48785f26b249673bc3cb61b8d3a002d6c3eca1f405518831ea",
       "signerSha256": "f28bb27cd24137bb5f89af5dc377c6f67dbf214e9b9f5125b7fb14af1bce536e"
     },
     {

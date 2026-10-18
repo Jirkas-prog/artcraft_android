@@ -44,7 +44,25 @@ public final class Catalog {
 
     public static Catalog parse(String json) throws JSONException {
         if (json.length() > MAX_JSON) throw new JSONException("Katalog je příliš velký.");
-        JSONObject root = new JSONObject(json);
+        // Android's recursive JSON parser has no depth limit of its own.
+        int depth = 0;
+        boolean quoted = false, escaped = false;
+        for (int i = 0; i < json.length(); i++) {
+            char ch = json.charAt(i);
+            if (quoted) {
+                if (escaped) escaped = false;
+                else if (ch == '\\') escaped = true;
+                else if (ch == '"') quoted = false;
+            } else if (ch == '"') quoted = true;
+            else if (ch == '{' || ch == '[') { if (++depth > 12) throw new JSONException("Katalog je příliš hluboce vnořený."); }
+            else if (ch == '}' || ch == ']') depth--;
+        }
+        JSONObject root;
+        try { root = new JSONObject(json); }
+        catch (StackOverflowError ex) {
+            // Android also accepts nonstandard quoted literals; contain recursion even for those.
+            throw new JSONException("Katalog překročil bezpečnou hloubku JSON.");
+        }
         if (integer(root, "schemaVersion", 1) != 1) throw new JSONException("Nepodporovaný formát katalogu.");
         JSONArray rows = root.getJSONArray("apps");
         if (rows.length() < 1 || rows.length() > 64) throw new JSONException("Neplatný počet aplikací.");

@@ -69,6 +69,10 @@ public final class CoreTest {
         rejects(() -> catalog(entry("com.artcraft.probe", 5).put("size", Catalog.MAX_APK + 1)));
         rejects(() -> catalog(entry("com.artcraft.probe", 5).put("name", "Fake\nName")));
         rejects(() -> Catalog.parse("{\"schemaVersion\":2,\"apps\":[]}"));
+        rejects(() -> Catalog.parse("{\"unused\":" + String.join("", Collections.nCopies(1000, "[")) + "0"));
+        check(catalog(entry("com.artcraft.probe", 5).put("description", "Literal brackets [{ and an escaped quote: \" are text.")).apps.size() == 1);
+        rejects(() -> Catalog.parse("{\"unused\":'" + String.join("", Collections.nCopies(15000, "}")) + "',\"deep\":"
+            + String.join("", Collections.nCopies(10000, "[")) + "0" + String.join("", Collections.nCopies(10000, "]")) + "}"));
         Catalog real = Catalog.parse(new String(Files.readAllBytes(Paths.get(args[0])), StandardCharsets.UTF_8));
         check(real.apps.size() >= 12);
         File dir = Files.createTempDirectory("craft-download-test-").toFile();
