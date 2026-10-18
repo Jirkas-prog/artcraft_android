@@ -1,0 +1,26 @@
+CRAFT APK – KOMUNITNÍ ANDROID SESTAVENÍ
+
+12 aplikací: CADCraft, DeckCraft, DesignCraft, EffectCraft, FilmCraft, GridCraft,
+LightCraft, PdfCraft, PhotoCraft, SoundCraft, VectorCraft a WordCraft.
+ARM64 (arm64-v8a), minimum Android 9 / API 28, cílové SDK 35.
+Craft Hub používá Android 10 / API 29 nebo novější.
+
+Zdroje byly staženy 18. 10. 2026. Přesné revize jsou v sources.json;
+aktuální kontrolní součty a verze APK jsou v catalog.json a SHA256SUMS.txt.
+Použit byl komunitní port https://github.com/MostafaXS1/artcraft-android .
+Nejde o oficiální Android vydání Storytold. Funkčnost těchto 12 aplikací
+na fyzickém Galaxy Tab S9 zatím nebyla ověřena.
+
+Nejprve zkoušejte kopie dokumentů: otevření, uložení, export, ovládání dotykem
+a S Penem, zvuk a návrat z pozadí. Systémová schránka není všude úplná.
+Pro nahrávání v SoundCraftu povolte mikrofon v nastavení oprávnění aplikace.
+Místní oprava jeho Android spouštěče aktivuje existující zvukový přehrávač;
+přehrávání ani nahrávání nebylo ověřeno na fyzickém tabletu.
+
+ArtCraft AI a původní desktopový Launcher nemají v této sadě Android APK.
+Craft Hub nahrazuje roli launcheru a instalátoru na Androidu.
+
+APK jsou podepsané stejným místním klíčem jako předchozí sada pro tablet.
+Při instalaci přes Craft Hub potvrďte systémové dialogy. Pokud jste dříve
+nainstalovali jinak podepsané APK, automatická aktualizace není možná.
+Craft Hub takovou aplikaci sám neodinstaluje ani nesmaže její data.
