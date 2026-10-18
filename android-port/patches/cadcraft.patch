@@ -1,0 +1,52 @@
+--- a/crates/ui-egui/src/canvas.rs
++++ b/crates/ui-egui/src/canvas.rs
+@@ -1258,6 +1258,7 @@
+         )
+     });
+     let inside = hover_pos.is_some_and(|p| rect.contains(p)) && resp.hovered();
++    let finger_navigation = crate::android_finger_navigation(ui.ctx());
+     // Which device is scrolling? On macOS, trackpads (and Magic Mouse) report precise point
+     // deltas; notched mouse wheels report lines. The answer is sticky because egui spreads a wheel
+     // notch over several frames. Elsewhere (browsers, Wayland smooth-scroll mice) ordinary wheels
+@@ -1265,11 +1266,11 @@
+     ui.input(|i| {
+         for e in &i.raw.events {
+             if let egui::Event::MouseWheel { unit, .. } = e {
+-                app.canvas.scroll_pans = cfg!(target_os = "macos") && *unit == egui::MouseWheelUnit::Point;
++                app.canvas.scroll_pans = (cfg!(target_os = "macos") || finger_navigation) && *unit == egui::MouseWheelUnit::Point;
+             }
+         }
+     });
+-    if inside && app.canvas.scroll_pans && scroll != egui::Vec2::ZERO {
++    if inside && app.canvas.scroll_pans && !finger_navigation && scroll != egui::Vec2::ZERO {
+         // Two-finger swipe pans: the drawing follows the fingers, like a middle-drag.
+         // Pinch (and Cmd+scroll) still zoom via `zoom_delta` below.
+         if let Ok(st) = app.session.state_mut() {
+@@ -1298,6 +1299,16 @@
+         && let Some(hp) = hover_pos
+     {
+         let _ = app.session.zoom_about(f64::from(zoom_pinch), xf.to_world(hp));
++    }
++    if inside && finger_navigation && scroll != egui::Vec2::ZERO {
++        if let Ok(st) = app.session.state_mut() {
++            let v = st.view();
++            let new_scale = f64::from(rect.height()) / v.height.max(1e-12);
++            st.set_view_quiet(cadcraft_engine::View {
++                center: v.center - Vec2::new(f64::from(scroll.x) / new_scale, -f64::from(scroll.y) / new_scale),
++                height: v.height,
++            });
++        }
+     }
+     // Pan with the middle button (or Shift+right-drag / two-finger drag on trackpads is scroll).
+     let middle_pressed = ui.input(|i| i.pointer.button_pressed(egui::PointerButton::Middle));
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -848,3 +848,8 @@
+         assert_eq!(ui.save_format, SaveFormat::Dwg);
+     }
+ }
++
++// Set only by the Android shell; desktop mouse/trackpad preferences stay unchanged.
++pub(crate) fn android_finger_navigation(ctx: &egui::Context) -> bool {
++    ctx.data(|d| d.get_temp::<bool>(egui::Id::new("craft.android.finger-navigation")).unwrap_or(false))
++}

@@ -1,0 +1,26 @@
+--- a/crates/ui-egui/src/canvas.rs
++++ b/crates/ui-egui/src/canvas.rs
+@@ -131,10 +131,10 @@
+         offset = content_rect.min + at * scale - anchor;
+     }
+     let overflow = vec2((content_rect.width() + 56.0 - avail.width()).max(0.0), (content_rect.height() + 56.0 - avail.height()).max(0.0));
+-    if resp.hovered() && !zooming {
++    if resp.hovered() && (!zooming || crate::android_finger_navigation(ui.ctx())) {
+         if overflow != egui::Vec2::ZERO {
+             offset -= wheel;
+-        } else if !app.anim_preview_active()
++        } else if !crate::android_finger_navigation(ui.ctx()) && !app.anim_preview_active()
+             && app.session.tool.marquee.is_none()
+             && !app.session.tool.dragging()
+             && let Some(next) = page_flick(wheel)
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -3414,3 +3414,8 @@
+         assert!(harness.state().dialog.is_some(), "Preferences stays open");
+     }
+ }
++
++// Set only by the Android shell; desktop mouse/trackpad preferences stay unchanged.
++pub(crate) fn android_finger_navigation(ctx: &egui::Context) -> bool {
++    ctx.data(|d| d.get_temp::<bool>(egui::Id::new("craft.android.finger-navigation")).unwrap_or(false))
++}

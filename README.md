@@ -18,6 +18,8 @@ Stahování běží jako oznámená služba i při přepnutí do jiné aplikace.
 
 ## Obsah
 
+Vydání **touch1** sjednocuje ovládání prsty ve všech 12 aplikacích: jeden prst posouvá obsah, podržení přibližně půl sekundy a tažení označuje nebo používá zvolený nástroj. Dva prsty současně přibližují a posouvají. Krátká klepnutí a okamžitá práce S Penem zůstávají zachované. Aktualizujte přes **Obnovit → Aktualizovat vše**. [Podrobnosti úpravy a zdrojové patche](android-port/README.md).
+
 CADCraft, DeckCraft, DesignCraft, EffectCraft, FilmCraft, GridCraft, LightCraft, PdfCraft, PhotoCraft, SoundCraft, VectorCraft a WordCraft. Tyto aplikace jsou experimentální komunitní ARM64 porty. Jejich funkčnost a dotykové ovládání je potřeba ověřit na konkrétním tabletu; související poznámky jsou v [APK-NOTES.txt](APK-NOTES.txt).
 
 Samostatná AI aplikace ArtCraft ani původní desktopový ArtCraft Launcher nemají v této sadě Android APK. Craft Hub je samostatná nativní Android implementace role launcheru, inspirovaná [ArtCraft Launcherem](https://github.com/storytold/craft-launcher); nepoužívá jeho chráněné logo a není oficiálním produktem ArtCraft týmu. Zachovává styl a povolené ikony jednotlivých aplikací.

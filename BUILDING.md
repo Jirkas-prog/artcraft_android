@@ -30,6 +30,8 @@ Před vydáním ověřte i Android běh: první instalaci, odmítnuté oprávně
 
 Craft aplikace byly sestaveny z revizí v `sources.json` pomocí komunitního [artcraft-android builderu](https://github.com/MostafaXS1/artcraft-android). Jejich původní sestavení a pracovní prostředí zůstává samostatně; tento repozitář hostuje hotové APK a zdroj launcheru.
 
+Dotyková úprava `touch1` je reprodukovatelná pomocí [android-port/apply.py](android-port/apply.py), společného modulu a patchů jednotlivých pláten. Zapojení do builderu a testy popisuje [android-port/README.md](android-port/README.md). Verzi zvyšujte v Android obalu v `[package].version`; používaný `cargo-apk2` odmítá `version_code` a `version_name` zapsané přímo do Android metadata.
+
 Import nových, již podepsaných APK:
 
 ```bash
@@ -38,7 +40,7 @@ python3 tools/publish_catalog.py build/craft-hub-10001.apk
 python3 tools/test.py
 ```
 
-Nástroj ověřuje podpis, metadata i architekturu, kopíruje APK do `apk/<aplikace>-<versionCode>.apk` a vytváří `catalog.json`, `SHA256SUMS.txt` a vložený offline katalog. Odmítne cizí certifikát, snížení verze nebo změnu obsahu již vydané číselné verze. Identifikátor balíčku se při aktualizaci nesmí změnit. Pokud přestavujete Craft APK se stejným názvem verze, zvyšte také jejich Android `version_code` v příslušném manifestu před kompilací.
+Nástroj ověřuje podpis, metadata i architekturu, kopíruje APK do `apk/<aplikace>-<versionCode>.apk` a vytváří `catalog.json`, `SHA256SUMS.txt` a vložený offline katalog. Odmítne cizí certifikát, snížení verze nebo změnu obsahu již vydané číselné verze. Identifikátor balíčku se při aktualizaci nesmí změnit. Před přestavením Craft APK zvyšte verzi Android obalu, ze které `cargo-apk2` odvodí vyšší `versionCode`.
 
 Katalog a nová APK odešlete v **jednom commitu** do `main`, aby se neobjevily odkazy na dosud neexistující soubory. Starší soubory mají neměnné cesty, takže dříve načtený katalog dál funguje. APK jsou v běžném Gitu, každé pod 100 MiB; nejde o Git LFS ukazatele. Historie binárních verzí bude repozitář postupně zvětšovat. Pro výrazně větší APK bude nutné upravit katalog/downloader pro release assets a limity.
 

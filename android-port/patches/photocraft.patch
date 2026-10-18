@@ -1,0 +1,36 @@
+--- a/crates/ui-egui/src/canvas.rs
++++ b/crates/ui-egui/src/canvas.rs
+@@ -3336,8 +3336,8 @@
+     // Interface › Enable Animations off: the wheel moves the canvas without a glide (#5721).
+     let wheel = crate::wheel_nav::read_with(
+         &ctx,
+-        app.session.prefs().general.zoom_with_scroll_wheel,
+-        app.session.prefs().enhanced_controls.zoom_with_trackpad_pinch,
++        app.session.prefs().general.zoom_with_scroll_wheel && !crate::android_finger_navigation(ui.ctx()),
++        app.session.prefs().enhanced_controls.zoom_with_trackpad_pinch || crate::android_finger_navigation(ui.ctx()),
+         response.id.with("wheel"),
+         nav_hovered,
+         app.session.prefs().interface.enable_animations,
+@@ -3371,6 +3371,12 @@
+                 view.center[1] -= d.y;
+             }
+             _ => {}
++        }
++        if crate::android_finger_navigation(ui.ctx()) && matches!(wheel, Some(crate::wheel_nav::Wheel::Zoom(_))) {
++            let scroll = ui.input(|i| i.smooth_scroll_delta);
++            let d = xf.unmap_vec(scroll) / (view.zoom / ppp);
++            view.center[0] -= d.x;
++            view.center[1] -= d.y;
+         }
+         let rotate_trackpad = app.session.prefs().enhanced_controls.rotate_view_with_trackpad;
+         if let Some(delta) = crate::rotate_view::trackpad_delta(&ctx, rotate_trackpad) {
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -3146,2 +3146,7 @@
+ #[cfg(test)]
+ mod options_hit_area_tests;
++
++// Set only by the Android shell; desktop mouse/trackpad preferences stay unchanged.
++pub(crate) fn android_finger_navigation(ctx: &egui::Context) -> bool {
++    ctx.data(|d| d.get_temp::<bool>(egui::Id::new("craft.android.finger-navigation")).unwrap_or(false))
++}

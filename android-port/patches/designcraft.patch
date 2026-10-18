@@ -1,0 +1,28 @@
+--- a/crates/ui-egui/src/canvas.rs
++++ b/crates/ui-egui/src/canvas.rs
+@@ -2304,7 +2304,13 @@
+     if resp.hovered() {
+         let (scroll, zoom_delta, m, hover) = ui.input(|i| (i.smooth_scroll_delta, i.zoom_delta(), i.modifiers, i.pointer.hover_pos()));
+         if let Some(hp) = hover {
+-            if zoom_delta != 1.0 {
++            if crate::android_finger_navigation(ui.ctx()) {
++                if zoom_delta != 1.0 { zoom_at(app, hp, zoom_delta as f64); }
++                if let Some(v) = app.view_mut() {
++                    let d = xf.unrotate_delta(scroll);
++                    v.origin = Point::new(v.origin.x - d.x as f64 / v.zoom, v.origin.y - d.y as f64 / v.zoom);
++                }
++            } else if zoom_delta != 1.0 {
+                 zoom_at(app, hp, zoom_delta as f64);
+             } else if m.command && scroll.y != 0.0 {
+                 zoom_at(app, hp, (1.0 + scroll.y as f64 * 0.003).clamp(0.5, 2.0));
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -3207,3 +3207,8 @@
+         assert!(app.session.documents()[1].doc.styles.char_style("Lead").is_none());
+     }
+ }
++
++// Set only by the Android shell; desktop mouse/trackpad preferences stay unchanged.
++pub(crate) fn android_finger_navigation(ctx: &egui::Context) -> bool {
++    ctx.data(|d| d.get_temp::<bool>(egui::Id::new("craft.android.finger-navigation")).unwrap_or(false))
++}

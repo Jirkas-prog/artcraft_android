@@ -6,10 +6,21 @@
   "min_sdk": 28,
   "target_sdk": 35,
   "device_tested": false,
+  "android_port": {
+    "release": "touch1",
+    "source": "android-port/",
+    "versions": "android-port/release.json",
+    "verification": "android-port/verification.json",
+    "physical_device_tested": false,
+    "emulator": "Android 15 / API 35 Google APIs x86_64 with ARM64 native bridge"
+  },
   "local_port_changes": [
     "Shared Cargo target directory; release debug symbols disabled.",
-    "ARM64 build uses Android NDK r28c; ELF alignment recorded in verification.json.",
-    "SoundCraft Android launcher initializes the existing playback backend and declares RECORD_AUDIO."
+    "ARM64 build uses Android NDK r28c; current ELF alignment recorded in android-port/verification.json.",
+    "SoundCraft Android launcher initializes the existing playback backend and declares RECORD_AUDIO.",
+    "touch1: shared finger pan, hold-to-drag selection, simultaneous pinch and centroid pan; stylus pressure passes through.",
+    "touch1: canvas and timeline gesture patches for CAD, Deck, Design, Effect, Film, Grid, Photo, Sound, Vector and Word; PDF and Light retain their existing pan/zoom handlers.",
+    "Android wrapper patch versions incremented for in-place updates; upstream library revisions below are unchanged."
   ],
   "sources": [
     {

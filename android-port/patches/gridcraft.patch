@@ -1,0 +1,55 @@
+--- a/crates/ui-egui/src/grid.rs
++++ b/crates/ui-egui/src/grid.rs
+@@ -598,7 +598,30 @@
+     // Scrolling.
+     let (scroll_delta, zoom_delta, modifiers, now) = ui.input(|i| (i.smooth_scroll_delta, i.zoom_delta(), i.modifiers, i.time));
+     if (resp.hovered() || resp.contains_pointer()) && !crate::text_box::contains_pointer(app, ui.ctx()) {
+-        if zoom_delta != 1.0 {
++        if crate::android_finger_navigation(ui.ctx()) {
++            // Keep the sheet point under the old centroid, then translate by the fingers.
++            let geo = make_geo(app, view.scroll);
++            let key = egui::Id::new(("android-sheet-pinch", place));
++            let previous = ui.data(|d| d.get_temp::<(f32, u16)>(key));
++            let shown = previous.filter(|p| p.1 == sh.zoom).map_or(sh.zoom as f32, |p| p.0);
++            let wanted = (shown * zoom_delta).clamp(10.0, 400.0);
++            let percent = wanted.round() as u16;
++            ui.data_mut(|d| d.insert_temp(key, (wanted, percent)));
++            let new_scale = geo.z * percent as f32 / sh.zoom.max(1) as f32;
++            if percent != sh.zoom {
++                if let Some(p) = ui.input(|i| i.pointer.hover_pos()) {
++                    let rel = vec2(if rtl { geo.cells.right() - p.x } else { p.x - geo.cells.left() }, p.y - geo.cells.top());
++                    let rel = (rel - vec2(geo.frozen_w, geo.frozen_h)).max(egui::Vec2::ZERO);
++                    view.scroll += rel * (1.0 / geo.z - 1.0 / new_scale);
++                }
++                let _ = app.session.run("view.zoom", json!({"percent": percent}));
++                ui.ctx().request_repaint();
++            }
++            app.grid.wheel_zoom = None;
++            let mut d = scroll_delta;
++            if rtl { d.x = -d.x; }
++            view.scroll -= d / new_scale;
++        } else if zoom_delta != 1.0 {
+             // egui's zoom factor is e^(speed × points); one notch is `line_scroll_speed` points.
+             let notch = ui.ctx().options(|o| o.input_options.scroll_zoom_speed * o.input_options.line_scroll_speed);
+             let turned = zoom_delta.ln() / notch;
+@@ -627,7 +650,8 @@
+                 zooming.glide = Some((z, sh.zoom));
+             }
+             app.grid.wheel_zoom = Some(zooming);
+-        } else if scroll_delta != egui::Vec2::ZERO {
++        }
++        if scroll_delta != egui::Vec2::ZERO && zoom_delta == 1.0 && !crate::android_finger_navigation(ui.ctx()) {
+             let z = if paper { make_geo(app, view.scroll).z } else { sh.zoom as f32 / 100.0 * DISPLAY_SCALE };
+             let mut d = scroll_delta;
+             // A horizontal swipe moves the content the way the fingers go, which is towards
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -1259,3 +1259,8 @@
+ pub fn cell(r: u32, c: u32) -> CellRef {
+     CellRef::new(r, c)
+ }
++
++// Set only by the Android shell; desktop mouse/trackpad preferences stay unchanged.
++pub(crate) fn android_finger_navigation(ctx: &egui::Context) -> bool {
++    ctx.data(|d| d.get_temp::<bool>(egui::Id::new("craft.android.finger-navigation")).unwrap_or(false))
++}

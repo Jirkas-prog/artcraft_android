@@ -1,0 +1,50 @@
+{
+  "cadcraft": {
+    "versionCode": 16779521,
+    "versionName": "0.9.1-touch1"
+  },
+  "deckcraft": {
+    "versionCode": 16779265,
+    "versionName": "0.8.1-touch1"
+  },
+  "designcraft": {
+    "versionCode": 16779521,
+    "versionName": "0.9.1-touch1"
+  },
+  "effectcraft": {
+    "versionCode": 16780289,
+    "versionName": "0.12.1-touch1"
+  },
+  "filmcraft": {
+    "versionCode": 16779521,
+    "versionName": "0.9.1-touch1"
+  },
+  "gridcraft": {
+    "versionCode": 16779265,
+    "versionName": "0.8.1-touch1"
+  },
+  "lightcraft": {
+    "versionCode": 16779522,
+    "versionName": "0.9.2-touch1"
+  },
+  "pdfcraft": {
+    "versionCode": 16779521,
+    "versionName": "0.9.1-touch1"
+  },
+  "photocraft": {
+    "versionCode": 16779777,
+    "versionName": "0.10.1-touch1"
+  },
+  "soundcraft": {
+    "versionCode": 16779521,
+    "versionName": "0.9.1-touch1"
+  },
+  "vectorcraft": {
+    "versionCode": 16780546,
+    "versionName": "0.13.2-touch1"
+  },
+  "wordcraft": {
+    "versionCode": 16779265,
+    "versionName": "0.8.1-touch1"
+  }
+}
