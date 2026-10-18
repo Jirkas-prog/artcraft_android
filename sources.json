@@ -1,0 +1,108 @@
+{
+  "recorded_at": "2026-10-18T18:42:40.348460+00:00",
+  "builder_repository": "https://github.com/MostafaXS1/artcraft-android",
+  "builder_commit": "07ab398456a4356744c78a598599a78ba26f5df4",
+  "abi": "arm64-v8a",
+  "min_sdk": 28,
+  "target_sdk": 35,
+  "device_tested": false,
+  "local_port_changes": [
+    "Shared Cargo target directory; release debug symbols disabled.",
+    "ARM64 build uses Android NDK r28c; ELF alignment recorded in verification.json.",
+    "SoundCraft Android launcher initializes the existing playback backend and declares RECORD_AUDIO."
+  ],
+  "sources": [
+    {
+      "app": "pdfcraft",
+      "version": "0.9.0",
+      "repository": "https://github.com/storytold/pdfcraft",
+      "commit": "932bf9c6bfdd63e2a21bb831696a3447b9def9cf"
+    },
+    {
+      "app": "gridcraft",
+      "version": "0.8.0",
+      "repository": "https://github.com/storytold/gridcraft",
+      "commit": "c30fa3f1cf324603f3bfc0171689b1d4083b40e5"
+    },
+    {
+      "app": "cadcraft",
+      "version": "0.9.0",
+      "repository": "https://github.com/storytold/cadcraft",
+      "commit": "3370a91fe96d0f8752622d041b7fed199a2bbac0"
+    },
+    {
+      "app": "soundcraft",
+      "version": "0.9.0",
+      "repository": "https://github.com/storytold/soundcraft",
+      "commit": "31f038939715e055dc24d09d613e206d397d5fd4"
+    },
+    {
+      "app": "deckcraft",
+      "version": "0.8.0",
+      "repository": "https://github.com/storytold/deckcraft",
+      "commit": "cb78440a1618e6a2c1df55dd7bff74719685518c"
+    },
+    {
+      "app": "wordcraft",
+      "version": "0.8.0",
+      "repository": "https://github.com/storytold/wordcraft",
+      "commit": "3af927501b3d205d80190c24946db65b4d04cb41"
+    },
+    {
+      "app": "designcraft",
+      "version": "0.9.0",
+      "repository": "https://github.com/storytold/designcraft",
+      "commit": "7141a68f1850255e079e3089c448c499cd45e896"
+    },
+    {
+      "app": "effectcraft",
+      "version": "0.12.0",
+      "repository": "https://github.com/storytold/effectcraft",
+      "commit": "22072d9f25846dbf8a3bf10105fdb51c3c0db4c1"
+    },
+    {
+      "app": "filmcraft",
+      "version": "0.9.0",
+      "repository": "https://github.com/storytold/filmcraft",
+      "commit": "48088e3a8e50bd4a7a71d1ebdfde0835b01a3051"
+    },
+    {
+      "app": "vectorcraft",
+      "version": "0.13.1",
+      "repository": "https://github.com/storytold/vectorcraft",
+      "commit": "3b527ca339d4c7beb1bce1c868ca7ea2b3d87f54"
+    },
+    {
+      "app": "photocraft",
+      "version": "0.10.0",
+      "repository": "https://github.com/storytold/photocraft",
+      "commit": "56dbc89a38248f6e50db50d132de47be88494cf6"
+    },
+    {
+      "app": "lightcraft",
+      "version": "0.9.1",
+      "repository": "https://github.com/storytold/lightcraft",
+      "commit": "31a677fe3dbf4bc1042f8f6346e83b0afd1b04e8"
+    },
+    {
+      "app": "craft-fonts",
+      "version": "0.1.0",
+      "repository": "https://github.com/storytold/craft-fonts",
+      "commit": "a71c20e30af613287c504f7e685ca8fad77752bc"
+    }
+  ],
+  "not_built": [
+    {
+      "app": "artcraft",
+      "repository": "https://github.com/storytold/artcraft",
+      "commit": "d4e4ac69bbd93d237eaf5d0260bc6a5ff3a5e373",
+      "reason": "No Android target in the inspected source or community builder. The new native desktop app needs Android integration for login webview, file dialogs, browser intents, clipboard and external FFmpeg playback."
+    },
+    {
+      "app": "craft-launcher",
+      "repository": "https://github.com/storytold/craft-launcher",
+      "commit": "9cef5d2a0f207da50d31547a726057ea40f7e5b4",
+      "reason": "Desktop installer/updater, not an Android application; no Android build target."
+    }
+  ]
+}
