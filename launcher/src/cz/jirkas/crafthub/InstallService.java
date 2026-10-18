@@ -58,6 +58,8 @@ public final class InstallService extends Service {
                     catch (RuntimeException ignored) { /* The OS may already have completed it. */ }
                 }
                 State.clearSession(this);
+                File[] leftovers = getCacheDir().listFiles((dir, name) -> name.startsWith("craft-") && name.endsWith(".apk"));
+                if (leftovers != null) for (File file : leftovers) file.delete();
                 String json = Net.catalog(repository);
                 Catalog catalog = Catalog.parse(json);
                 queue = catalog.select(ids);

@@ -34,7 +34,7 @@ Import nových, již podepsaných APK:
 
 ```bash
 python3 tools/publish_catalog.py /slozka/s/novymi-apk
-python3 tools/publish_catalog.py build/craft-hub-10000.apk
+python3 tools/publish_catalog.py build/craft-hub-10001.apk
 python3 tools/test.py
 ```
 

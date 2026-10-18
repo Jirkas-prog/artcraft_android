@@ -2,7 +2,7 @@
 
 Jeden instalátor a launcher pro Craft App Suite na Android tabletu. Výchozí zdroj je tento veřejný repozitář, větev **main**. Aplikace načítá `catalog.json`, zkontroluje dostupné verze, stáhne podepsané APK ze složky `apk/` a předá je systémovému instalátoru. Nainstalované aplikace lze z Craft Hubu rovnou otevřít.
 
-**[Stáhnout Craft Hub](https://raw.githubusercontent.com/Jirkas-prog/artcraft_android/main/apk/craft-hub-10000.apk)**
+**[Stáhnout Craft Hub](https://raw.githubusercontent.com/Jirkas-prog/artcraft_android/main/apk/craft-hub-10001.apk)**
 
 ## Instalace a používání
 
