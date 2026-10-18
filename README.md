@@ -29,6 +29,7 @@ Launcher aktualizuje **publikované APK**. Sám nekompiluje nové Git zdroje. Sp
 - [Postup sestavení a publikování](BUILDING.md)
 - [Katalog a přesné kontrolní součty](catalog.json)
 - [Revize zdrojů sestavených aplikací](sources.json)
+- [Výsledky ověření a rozsah testů](VALIDATION.md)
 - [Licence a původ použitých prvků](ATTRIBUTION.md)
 
 V nastavení **Zdroj** lze vybrat jiný veřejný GitHub repozitář se stejným formátem katalogu ve větvi `main`. APK musí být podepsané stejným důvěryhodným klíčem jako tato sada. Přenos probíhá přes HTTPS; před instalací se ověřuje velikost, SHA-256, identifikátor balíčku, číselná verze a podpis. Návrat na starší verzi se nenabízí. Jinak podepsané instalace se automaticky neodinstalovávají a jejich data se nemažou.
