@@ -16,8 +16,8 @@ final class Packages {
         catch (PackageManager.NameNotFoundException ex) { return null; }
     }
     static long version(Context c, String id) {
-        PackageInfo info = installed(c, id);
-        return info == null ? 0 : info.getLongVersionCode();
+        try { return c.getPackageManager().getPackageInfo(id, 0).getLongVersionCode(); }
+        catch (PackageManager.NameNotFoundException ex) { return 0; }
     }
     static boolean trusted(PackageInfo info) {
         if (info == null || info.signingInfo == null) return false;
@@ -27,9 +27,11 @@ final class Packages {
         catch (IOException ex) { return false; }
     }
     static String unavailable(Context c, Catalog.Entry e) {
+        return unavailable(e, installed(c, e.packageId));
+    }
+    static String unavailable(Catalog.Entry e, PackageInfo installed) {
         if (e.minSdk > Build.VERSION.SDK_INT) return "Vyžaduje novější Android";
         if (e.abi.equals("arm64-v8a") && !Arrays.asList(Build.SUPPORTED_ABIS).contains("arm64-v8a")) return "Vyžaduje tablet ARM64";
-        PackageInfo installed = installed(c, e.packageId);
         if (installed != null && !trusted(installed)) return "Nainstalovaná aplikace má jiný podpis";
         return null;
     }

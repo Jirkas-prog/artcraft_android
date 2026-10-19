@@ -6,6 +6,8 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Runs the real catalog parser and downloader, including hostile response paths. */
 public final class CoreTest {
@@ -13,6 +15,10 @@ public final class CoreTest {
     private static long declared = -1;
     private static int status = 200;
     private static String redirect;
+    private static boolean ranges, badRange, blockRead;
+    private static int failAfter = -1, requests, bytesRead;
+    private static String lastRange;
+    private static CountDownLatch reading, disconnected;
     private static int checks;
     interface Checked { void run() throws Exception; }
     static void check(boolean value) { checks++; if (!value) throw new AssertionError("Check " + checks + " failed"); }
@@ -32,14 +38,44 @@ public final class CoreTest {
         return Catalog.parse(new JSONObject().put("schemaVersion", 1).put("apps", apps).toString());
     }
     static final class Response extends HttpURLConnection {
-        Response(URL url) { super(url); }
-        public void disconnect() {}
+        Response(URL url) { super(url); requests++; }
+        public void disconnect() { if (disconnected != null) disconnected.countDown(); }
         public boolean usingProxy() { return false; }
         public void connect() {}
-        public int getResponseCode() { return status; }
-        public String getHeaderField(String name) { return "Location".equals(name) ? redirect : null; }
+        private int offset() {
+            lastRange = getRequestProperty("Range");
+            return ranges && lastRange != null ? Integer.parseInt(lastRange.substring(6, lastRange.length() - 1)) : 0;
+        }
+        public int getResponseCode() { return status == 200 && offset() > 0 ? 206 : status; }
+        public String getHeaderField(String name) {
+            if ("Location".equals(name)) return redirect;
+            if ("Content-Range".equals(name)) return badRange ? "bytes 0-0/1" : "bytes " + offset() + "-" + (response.length - 1) + "/" + response.length;
+            return null;
+        }
         public long getContentLengthLong() { return declared; }
-        public InputStream getInputStream() { return new ByteArrayInputStream(response); }
+        public InputStream getInputStream() {
+            ByteArrayInputStream bytes = new ByteArrayInputStream(response, offset(), response.length - offset());
+            return new InputStream() {
+                int delivered;
+                public int read() throws IOException { byte[] one = new byte[1]; return read(one, 0, 1) == -1 ? -1 : one[0] & 255; }
+                public int read(byte[] b, int off, int len) throws IOException {
+                    if (blockRead) {
+                        reading.countDown();
+                        try { if (!disconnected.await(3, TimeUnit.SECONDS)) throw new IOException("disconnect did not release the request"); }
+                        catch (InterruptedException ex) { throw new InterruptedIOException(); }
+                        throw new IOException("socket closed");
+                    }
+                    if (failAfter >= 0 && delivered >= failAfter) throw new SocketTimeoutException("test network timeout");
+                    int n = bytes.read(b, off, failAfter < 0 ? len : Math.min(len, failAfter - delivered));
+                    if (n > 0) { delivered += n; bytesRead += n; }
+                    return n;
+                }
+            };
+        }
+    }
+
+    static File download(Catalog.Entry entry, File dir, Net.Progress progress) throws IOException {
+        return new Net().download(Catalog.DEFAULT_REPO, entry, dir, progress);
     }
     public static void main(String[] args) throws Exception {
         URL.setURLStreamHandlerFactory(protocol -> "https".equals(protocol) ? new URLStreamHandler() {
@@ -78,24 +114,106 @@ public final class CoreTest {
         File dir = Files.createTempDirectory("craft-download-test-").toFile();
         try {
             Catalog.Entry e = c.apps.get(0);
-            File apk = Net.download(Catalog.DEFAULT_REPO, e, dir, (n, total) -> {});
+            byte[] original = response.clone();
+            File apk = download(e, dir, (n, total) -> {});
             check(Arrays.equals(response, Files.readAllBytes(apk.toPath()))); check(apk.delete());
             response[0] ^= 1;
-            rejects(() -> Net.download(Catalog.DEFAULT_REPO, e, dir, (n, total) -> {}));
+            rejects(() -> download(e, dir, (n, total) -> {}));
+            check(Objects.requireNonNull(dir.list()).length == 0);
             response[0] ^= 1;
             response = Arrays.copyOf(response, response.length + 1);
-            rejects(() -> Net.download(Catalog.DEFAULT_REPO, e, dir, (n, total) -> {}));
+            rejects(() -> download(e, dir, (n, total) -> {}));
             response = Arrays.copyOf(response, response.length - 2);
-            rejects(() -> Net.download(Catalog.DEFAULT_REPO, e, dir, (n, total) -> {}));
+            rejects(() -> download(e, dir, (n, total) -> {}));
+            check(Objects.requireNonNull(dir.listFiles())[0].length() == original.length - 1);
+            response = original.clone(); ranges = true; bytesRead = 0;
+            apk = download(e, dir, (n, total) -> {});
+            check(lastRange.equals("bytes=" + (original.length - 1) + "-"));
+            check(bytesRead == 1 && Arrays.equals(original, Files.readAllBytes(apk.toPath())));
+            int previousRequests = requests;
+            check(download(e, dir, (n, total) -> {}).equals(apk) && requests == previousRequests);
+            check(apk.delete());
+
+            failAfter = 5;
+            rejects(() -> download(e, dir, (n, total) -> {}));
+            check(Objects.requireNonNull(dir.listFiles())[0].length() == 5);
+            failAfter = -1; bytesRead = 0;
+            apk = download(e, dir, (n, total) -> {});
+            check(lastRange.equals("bytes=5-") && bytesRead == original.length - 5);
+            check(Arrays.equals(original, Files.readAllBytes(apk.toPath())) && apk.delete());
+
+            // A server ignoring Range must replace the prefix, not append to it.
+            failAfter = 4;
+            rejects(() -> download(e, dir, (n, total) -> {}));
+            failAfter = -1; ranges = false; bytesRead = 0;
+            apk = download(e, dir, (n, total) -> {});
+            check(lastRange.equals("bytes=4-") && bytesRead == original.length);
+            check(Arrays.equals(original, Files.readAllBytes(apk.toPath())) && apk.delete());
+
+            failAfter = 4;
+            rejects(() -> download(e, dir, (n, total) -> {}));
+            failAfter = -1; ranges = true; badRange = true;
+            rejects(() -> download(e, dir, (n, total) -> {}));
+            check(Objects.requireNonNull(dir.list()).length == 0);
+            badRange = false;
+            // The saved prefix is part of the final hash, not implicitly trusted.
+            failAfter = 4;
+            rejects(() -> download(e, dir, (n, total) -> {}));
+            File prefix = Objects.requireNonNull(dir.listFiles())[0];
+            byte[] damaged = Files.readAllBytes(prefix.toPath()); damaged[0] ^= 1;
+            Files.write(prefix.toPath(), damaged); failAfter = -1;
+            rejects(() -> download(e, dir, (n, total) -> {}));
+            check(!prefix.exists());
+            apk = download(e, dir, (n, total) -> {});
+            damaged = Files.readAllBytes(apk.toPath()); damaged[0] ^= 1;
+            Files.write(apk.toPath(), damaged);
+            rejects(() -> download(e, dir, (n, total) -> {}));
+            check(!apk.exists());
             declared = 999;
-            rejects(() -> Net.download(Catalog.DEFAULT_REPO, e, dir, (n, total) -> {}));
+            rejects(() -> download(e, dir, (n, total) -> {}));
             declared = -1;
             status = 302; redirect = "https://evil.test/a.apk";
-            rejects(() -> Net.download(Catalog.DEFAULT_REPO, e, dir, (n, total) -> {}));
+            rejects(() -> download(e, dir, (n, total) -> {}));
             status = 200;
-            rejects(() -> Net.download(Catalog.DEFAULT_REPO, e, dir, (n, total) -> { throw new InterruptedIOException("cancel"); }));
+            rejects(() -> download(e, dir, (n, total) -> { throw new InterruptedIOException("cancel"); }));
             check(Objects.requireNonNull(dir.list()).length == 0);
+
+            // Cancel a genuinely blocked read and immediately begin a replacement download.
+            Net blocked = new Net(); blockRead = true;
+            reading = new CountDownLatch(1); disconnected = new CountDownLatch(1);
+            AtomicReference<Exception> failure = new AtomicReference<>();
+            Thread old = new Thread(() -> {
+                try { blocked.download(Catalog.DEFAULT_REPO, e, dir, (n, total) -> {}); }
+                catch (Exception ex) { failure.set(ex); }
+            });
+            old.start(); check(reading.await(2, TimeUnit.SECONDS));
+            blockRead = false;
+            AtomicReference<File> replacement = new AtomicReference<>();
+            AtomicReference<Exception> replacementFailure = new AtomicReference<>();
+            CountDownLatch replacing = new CountDownLatch(1);
+            Thread next = new Thread(() -> {
+                replacing.countDown();
+                try { replacement.set(download(e, dir, (n, total) -> {})); }
+                catch (Exception ex) { replacementFailure.set(ex); }
+            });
+            next.start(); check(replacing.await(2, TimeUnit.SECONDS));
+            blocked.cancel(); blocked.cancel();
+            old.join(2000); next.join(2000);
+            check(!old.isAlive() && failure.get() instanceof IOException);
+            check(!next.isAlive() && replacementFailure.get() == null);
+            disconnected = null;
+            apk = replacement.get();
+            check(Arrays.equals(original, Files.readAllBytes(apk.toPath())) && apk.delete());
+            rejects(() -> blocked.download(Catalog.DEFAULT_REPO, e, dir, (n, total) -> {}));
+
+            File unrelated = new File(dir, "user-document.txt"); Files.write(unrelated.toPath(), original);
+            Files.write(new File(dir, "craft-obsolete.apk").toPath(), original);
+            apk = download(e, dir, (n, total) -> {});
+            check(Objects.requireNonNull(dir.list()).length == 2 && unrelated.isFile());
+            Net.clearDownloads(dir);
+            check(!apk.exists() && unrelated.isFile());
+            check(unrelated.delete());
         } finally { dir.delete(); }
-        System.out.println(checks + " checks passed: catalog, URL bounds, signer pinning, versions, queue order, download corruption and cancellation.");
+        System.out.println(checks + " checks passed: catalog, signer, versions, range resume, restart fallback, corruption, cancellation and bounded cache.");
     }
 }
