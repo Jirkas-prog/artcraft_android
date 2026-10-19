@@ -7,7 +7,7 @@
   "target_sdk": 35,
   "device_tested": false,
   "android_port": {
-    "release": "touch1",
+    "release": "touch1 + PdfCraft tablet2",
     "source": "android-port/",
     "versions": "android-port/release.json",
     "verification": "android-port/verification.json",
@@ -20,6 +20,8 @@
     "SoundCraft Android launcher initializes the existing playback backend and declares RECORD_AUDIO.",
     "touch1: shared finger pan, hold-to-drag selection, simultaneous pinch and centroid pan; stylus pressure passes through.",
     "touch1: canvas and timeline gesture patches for CAD, Deck, Design, Effect, Film, Grid, Photo, Sound, Vector and Word; PDF and Light retain their existing pan/zoom handlers.",
+    "tablet2: PdfCraft Android chrome uses larger tabs/close targets and horizontally scrollable mode/document-navigation bars; page-label lists are allocated only on submitted page navigation.",
+    "tablet2: PdfCraft writes commit their staged contents through the Android document provider before reporting success; provider failures preserve the dirty document state.",
     "Android wrapper patch versions incremented for in-place updates; upstream library revisions below are unchanged."
   ],
   "sources": [

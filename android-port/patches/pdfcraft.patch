@@ -1,0 +1,139 @@
+--- a/crates/ui-egui/src/chrome.rs
++++ b/crates/ui-egui/src/chrome.rs
+@@ -21,10 +21,13 @@
+ /// Where the strip's content starts to the right of the traffic lights: the end of the three
+ /// lights plus the same gap the lights keep from the top of the window.
+ pub const MAC_CONTENT_LEFT: f32 = MAC_LIGHTS_LEFT + 2.0 * MAC_LIGHT_PITCH + MAC_LIGHT + (MAC_TITLE_BAR - MAC_LIGHT) / 2.0;
++#[path = "tablet_chrome.rs"]
++mod tablet;
++
+ /// The strip and its controls everywhere else.
+-const TAB_STRIP: f32 = 38.0;
+-const TAB_HEIGHT: f32 = 30.0;
+-const STRIP_BUTTON: f32 = 28.0;
++const TAB_STRIP: f32 = if cfg!(target_os = "android") { 56.0 } else { 38.0 };
++const TAB_HEIGHT: f32 = if cfg!(target_os = "android") { 48.0 } else { 30.0 };
++const STRIP_BUTTON: f32 = if cfg!(target_os = "android") { 48.0 } else { 28.0 };
+
+ pub fn tab_strip(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
+     let t = Tokens::get(ui.ctx());
+@@ -67,10 +70,10 @@
+                     app.combine_tab.focused = false;
+                 }
+                 // Keep the two icon buttons, Discord's text/padding and three gaps outside the scrolling tabs.
+-                let controls_width = ui.fonts_mut(|f| f.layout_no_wrap("Discord".into(), theme::medium(13.0), t.text).size().x)
++                let controls_width = if cfg!(target_os = "android") { 0.0 } else { ui.fonts_mut(|f| f.layout_no_wrap("Discord".into(), theme::medium(13.0), t.text).size().x)
+                     + 2.0 * button
+                     + 50.0
+-                    + window_controls::width(&controls.right);
++                    + window_controls::width(&controls.right) };
+                 // Open stays in sight after the tabs: its icon, text and padding, and the gaps around it.
+                 let open_width = ui.fonts_mut(|f| f.layout_no_wrap(tl!("Open").into(), theme::medium(13.0), t.text).size().x) + 38.0 + 12.0;
+                 let mut tabs_width = (ui.available_width() - controls_width - open_width).max(0.0);
+@@ -86,7 +89,7 @@
+                     natural.push(tab_natural_width(ui, &t, tl!("Combine files")));
+                 }
+                 let gap = ui.spacing().item_spacing.x;
+-                let overflow = tabs_overflow(&natural, tabs_width, gap, TAB_MIN_WIDTH);
++                let overflow = !cfg!(target_os = "android") && tabs_overflow(&natural, tabs_width, gap, TAB_MIN_WIDTH);
+                 if overflow {
+                     tabs_width = (tabs_width - 2.0 * (TAB_ARROW + gap)).max(0.0);
+                 }
+@@ -269,6 +272,7 @@
+                 if widgets::ghost_button_sized(ui, "plus", tl!("Open"), tab_h).on_hover_text(tip).clicked() {
+                     app.open_dialog();
+                 }
++                if !cfg!(target_os = "android") {
+                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                     if !controls.right.is_empty() {
+                         // Laid out left to right inside the right-to-left run, so they read in
+@@ -304,6 +308,7 @@
+                         app.execute("help.discord");
+                     }
+                 });
++                }
+             });
+         });
+ }
+@@ -336,7 +341,7 @@
+ }
+
+ /// A tab's chrome around its name: the icon on the left, the close button on the right.
+-const TAB_CHROME: f32 = 64.0;
++const TAB_CHROME: f32 = if cfg!(target_os = "android") { 92.0 } else { 64.0 };
+ /// The narrowest a tab shrinks to before the strip scrolls: room for most of a name.
+ const TAB_MIN_WIDTH: f32 = 180.0;
+ /// The arrows either side of tabs that don't fit.
+@@ -464,7 +469,8 @@
+         );
+         ui.painter().text(rect.min + vec2(28.0, rect.height() / 2.0), Align2::LEFT_CENTER, label, font, if active { t.text } else { t.text_muted });
+     });
+-    let x_rect = Rect::from_center_size(rect.right_center() - vec2(16.0, 0.0), vec2(20.0, 20.0));
++    let (inset, size) = if cfg!(target_os = "android") { (24.0, 48.0) } else { (16.0, 20.0) };
++    let x_rect = Rect::from_center_size(rect.right_center() - vec2(inset, 0.0), vec2(size, size));
+     let x = ui.interact(x_rect, id.with("close"), Sense::click());
+     let x_press = theme::Press::track(ui, &x);
+     x_press.wash(ui, x_rect, 4, false);
+@@ -489,6 +495,7 @@
+ }
+
+ pub fn mode_bar(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
++    if cfg!(target_os = "android") { return tablet::mode_bar(app, ui); }
+     let t = Tokens::get(ui.ctx());
+     egui::Panel::top("mode_bar")
+         .exact_size(48.0)
+@@ -535,9 +542,10 @@
+
+ fn main_menu(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
+     let t = Tokens::get(ui.ctx());
+-    let resp = widgets::ghost_button(ui, "panel-left", tl!("Menu"));
++    let resp = widgets::ghost_button_sized(ui, "panel-left", tl!("Menu"), if cfg!(target_os = "android") { 48.0 } else { 30.0 });
+     egui::Popup::menu(&resp).show(|ui| {
+         ui.set_min_width(230.0);
++        if cfg!(target_os = "android") { ui.spacing_mut().interact_size.y = 48.0; }
+         ui.menu_button(tl!("File"), |ui| crate::commands::registry_menu(app, ui, "File"));
+         ui.menu_button(tl!("Edit"), |ui| crate::commands::registry_menu(app, ui, "Edit"));
+         ui.menu_button(tl!("Pages"), |ui| crate::commands::registry_menu(app, ui, "Pages"));
+@@ -619,6 +627,7 @@
+ }
+
+ pub fn right_rail(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
++    if cfg!(target_os = "android") { return tablet::right_rail(app, ui); }
+     let t = Tokens::get(ui.ctx());
+     let Some((index, id)) = app.active_ids() else { return };
+     let Some(doc) = app.session.get(id) else { return };
+--- a/crates/ui-egui/src/lib.rs
++++ b/crates/ui-egui/src/lib.rs
+@@ -33,6 +33,8 @@
+ mod appearance;
+ pub mod canvas;
+ mod chrome;
++#[cfg(target_os = "android")]
++pub mod android_save;
+ mod combine_grid;
+ mod image_pick;
+ mod tags_ui;
+--- a/crates/ui-egui/src/editing.rs
++++ b/crates/ui-egui/src/editing.rs
+@@ -755,6 +755,9 @@
+             }
+         };
+         if let Err(e) = write_atomically(dest, &bytes) {
++            // The private copy may be written even when its Android provider refuses the commit.
++            #[cfg(target_os = "android")]
++            self.watch.known_now(id, dest);
+             self.notify_fmt("Couldn't save {name}: {e}", &[("name", dest), ("e", &e.to_string())]);
+             return false;
+         }
+@@ -1015,7 +1018,10 @@
+ /// Write via a temporary file in the same directory and rename over the target, so a crash or
+ /// full disk never leaves a half-written PDF where the original was.
+ pub fn write_atomically(path: &str, bytes: &[u8]) -> std::io::Result<()> {
+-    write_atomically_with(path, bytes, staging_suffixes())
++    write_atomically_with(path, bytes, staging_suffixes())?;
++    #[cfg(target_os = "android")]
++    crate::android_save::commit(path)?;
++    Ok(())
+ }
+
+ /// [`write_atomically`], trying the staging names that `suffixes` give.

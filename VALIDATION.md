@@ -1,5 +1,18 @@
 # Ověření sestavení
 
+## PdfCraft 0.9.2-tablet2 — 19. 10. 2026
+
+- Nové vydání `16779522` zachovává podpis předchozího APK. Kontrola celé sady 12 editorů znovu ověřila podpisy, verze, ARM64, nativní závislosti a 16KB ELF zarovnání. SHA-256 nového PdfCraftu je `12edb01bc5ab16b62ecf5fb4dbc7c6b6f32b14b2953136aabcb5a87ff8372554`.
+- Čtyři testy skutečného egui rozložení a společného filtru gest: ovládací plochy 48 bodů, dostupnost posledního nástroje při šířkách 240–1200 bodů, výška textových polí, posun lišty bez kliknutí a krátký dotyk tlačítka. Regresní varianta s obyčejným vodorovným řádkem správně selhala na nedostupném posledním tlačítku. Testy prošly z čistého cílového adresáře, mutant používal samostatný adresář sestavení.
+- Test zapisovacího callbacku ověřuje chybějící inicializaci, soukromý soubor, úspěch provideru, odmítnutí, neznámý stav, chybu volání a opakování po obnovení callbacku. Oba nové Rust moduly prošly Clippy se zakázanými varováními a kontrolou formátování.
+- Po aktualizaci katalogu znovu prošlo všech 78 kontrol parseru a downloaderu Hubu. Opakované použití portovacího skriptu nezduplikuje připojené moduly ani callback.
+- Skutečné ARM64 APK bylo zkoušeno na izolovaném Androidu 15 / API 35 s překladem ARM64: 1600 × 1000, 1000 × 1600 a úzké okno 600 × 900, vše při 240 dpi. Ověřen posun obou lišt k posledním nástrojům, režim Read, následující stránka, zadání stránky 3 a zoomu 150 %, přizpůsobení stránky, nabídka postranních panelů a otočení zařízení. Pinch současně přiblížil a posunul dokument; podržení s tažením označilo text.
+- Test odhalil chybu původního obalu: Save označilo dokument jako uložený, ale soubor otevřený přes Android zůstal nezměněný. Po opravě se zvýraznění zapsalo do původního PDF a jeho SHA-256 souhlasilo s pracovní kopií. Při řízeně nepoužitelném cíli provider vrátil EISDIR; aplikace ukázala chybu, zachovala příznak změn a dialog před zavřením. Po obnovení cíle a opakování Save se oba soubory shodovaly.
+- Uložit jako přes skutečný systémový dialog vytvořilo nové PDF v Downloads. Následná úprava a Save aktualizovaly tento nový cíl přes content URI; SHA-256 cíle a pracovní kopie souhlasily. Po ukončení procesu a opětovném otevření původního souboru z Downloads zůstala viditelná všechna tři zvýraznění.
+- Odebrání zvláštního přístupu k souborům Androidem ukončilo proces; po spuštění aplikace nabídla obnovu a vrátila neuložené druhé zvýraznění. Tento scénář nenahrazuje obecný test obnovy při všech typech pádů. V kontrolovaném logu nebyla chyba AndroidRuntime.
+
+V tomto vydání se mění pouze PdfCraft a katalog. Zbývajících 11 editorů zůstává na `touch1`. Desktopový dialog vlastností PDF se v okně širokém 400 dp stále nevejde celý; úprava dalších dialogů a editorů zůstává v seznamu práce. Na fyzickém Galaxy Tab S9 nebylo provedeno měření výkonu ani spotřeby. Zápis libovolného SAF provideru nelze obecně prohlásit za atomické nahrazení souboru.
+
 ## Craft Hub 1.0.2 — 19. 10. 2026
 
 - 78 automatických kontrol parseru a skutečného downloaderu. Nové scénáře ověřují pokračování po zkráceném přenosu a timeoutu, správný rozsah HTTP 206, server ignorující Range (200), chybný Content-Range, poškození uloženého začátku i celého souboru, odpojení blokovaného čtení a současně spuštěné náhradní stahování. Zůstávají kontroly původních bezpečnostních hranic a podpisu.
