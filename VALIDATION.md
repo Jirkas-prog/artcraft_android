@@ -9,6 +9,8 @@
 - Ověřeno odmítnutí systémového instalačního dialogu a následné zrušení pozastavené fronty. Zrušení odstranilo vložené částečné APK z cache, zbytek cache ponechalo a aplikace zůstala ovladatelná.
 - Při nedostupné síti a ukončení procesu zůstal zachovaný záznam fronty i 6 279 614 bajtů ze souboru GridCraftu o velikosti 12 559 228 bajtů. Po návratu připojení a pokračování proběhlo stažení, ověření a potvrzená instalace z veřejného katalogu. Android eviduje `cz.jirkas.crafthub` jako instalátor verze `16779265`.
 - Release APK `10002` ověřeno pomocí `apksigner`; používá stejný certifikát jako předchozí vydání. Testovací APK `9998` z aktuálního zdroje slouží pouze ke kontrole vlastní aktualizace a nepatří do katalogu.
+- Vlastní aktualizace v emulátoru proběhla z testovacího Hubu `9998` na veřejné vydání `10002` přes tlačítko Aktualizovat na kartě Hubu. Po opětovném otevření aplikace ukazuje 1.0.2 jako aktuální, fronta je prázdná, instalační relace odstraněná a Android eviduje samotný Hub jako instalátor. V kontrolovaném logu nebyla chyba AndroidRuntime.
+- Veřejný katalog obsahuje Hub 1.0.2, APK má 936 875 bajtů. Celý soubor stažený z veřejného GitHubu odpovídá SHA-256 `e5016c3184835bc992d63d5fb24351b23c923b71cff5346315a6dc328cc70a3c`.
 
 Na fyzickém Galaxy Tab S9 nebyl výkon měřen. Nenaměřené optimalizace editorů jsou vedeny odděleně v seznamu v README; tato verze jejich binární soubory nemění.
 
