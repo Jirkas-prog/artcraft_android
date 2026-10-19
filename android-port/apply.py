@@ -40,7 +40,20 @@ def apply(root, app):
                  '        if touch.force.is_none() { return; }\n'
                  '        // If we\'re not yet translating a touch or we\'re translating this very')
     launcher = source / 'apps' / f'{app}-android'
+    if app == 'pdfcraft':
+        ui = source / 'crates/ui-egui/src'
+        shutil.copyfile(HERE / 'tablet/pdf_chrome.rs', ui / 'tablet_chrome.rs')
+        shutil.copyfile(HERE / 'tablet/tablet_layout.rs', ui / 'tablet_layout.rs')
+        shutil.copyfile(HERE / 'saving/save_bridge.rs', ui / 'android_save.rs')
     lib = launcher / 'src/lib.rs'
+    if app == 'pdfcraft':
+        replace_once(lib, '    let saf_bridge = saf::Bridge::new(&android_app);',
+                     '    let saf_bridge = saf::Bridge::new(&android_app);\n'
+                     '    let save_bridge = saf_bridge.clone_ref();\n'
+                     '    pdfcraft_ui_egui::android_save::install(Arc::new(move |path| save_bridge.commit(path)));')
+        # Writes now commit before the UI reports success. Never write them a second time later.
+        replace_once(lib, '    state.mirror.sync(bridge);',
+                     '    // PdfCraft commits through android_save before reporting a successful write.')
     text = lib.read_text()
     if 'mod android_touch;' not in text:
         text += '\nmod android_touch;\n'

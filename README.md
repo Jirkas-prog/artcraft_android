@@ -26,14 +26,19 @@ Od **Craft Hubu 1.0.2** se při výpadku spojení uchovává stažená část ak
 | P1 | Odpojit zrušený přenos, uklidit cache a oddělit dobíhající práci od nové fronty. | Hotovo v 1.0.2; práce front se vykonává postupně, včetně úklidu. |
 | P1 | Obnovit stav instalací po návratu a odstranit opakované dotazy na balíčky. | Hotovo v 1.0.2; jeden dotaz místo dvou na kartu i při výběru celé sady. |
 | P1 | Doplnit kontroly obnovy, poškozené mezipaměti a souběhu zrušení/nového stažení. | Hotovo: 78 kontrol parseru a downloaderu, plus Android scénáře popsané v VALIDATION.md. |
-| P2 | Zlepšit dotykové plochy editorů, klávesnici, otočení obrazovky a více oken. | Další etapa: projít jednotlivé nástroje a kontrolovat hitboxy; cíl alespoň 48 dp podle [Android doporučení](https://developer.android.com/guide/topics/ui/accessibility/views/apps-views). |
+| P1 | Zaručit, že úspěšné uložení PDF znamená i zápis zpět do zvoleného Android dokumentu. | PdfCraft tablet2 dokončí zápis přes provider před potvrzením úspěchu; odmítnutí zachová stav neuložených změn. Stejný pracovní postup je potřeba prověřit v ostatních editorech. |
+| P2 | Zlepšit dotykové plochy editorů, klávesnici, otočení obrazovky a více oken. | Částečně hotovo: PdfCraft 0.9.2-tablet2 má větší hlavní ovládací prvky a posuvné lišty pro úzká okna. Další dialogy a editory zbývají; cíl alespoň 48 dp podle [Android doporučení](https://developer.android.com/guide/topics/ui/accessibility/views/apps-views). |
 | P2 | Změřit start, RAM, překreslování a spotřebu při velkých dokumentech, náhledech a práci na pozadí. | Dosud chybí profilování na Tab S9. Nejsou doložena procenta možného zrychlení ani konkrétní úspora baterie. |
 | P2 | Zmenšit obsah nativních knihoven a porovnat velikost proti rychlosti filtrů/exportů. | APK sady mají celkem 470,11 MiB. Téměř vše je v `.so`, včetně vložených dat; měnit ikony nestačí. PhotoCraft a VectorCraft již používají ThinLTO a jednu codegen unit. Další změny musí mít srovnávací měření. |
 | P2 | Dokončit testy ukládání, S Penu, zvuku a návratu z pozadí ve všech 12 aplikacích; automatizovat kontroly vydání. | Gesta jsou prakticky ověřena v pěti editorech v emulátoru. Testy na fyzickém tabletu a kompletní pracovní postupy zbývají. |
 
-Snížení počtu dotazů z 26 na 13 při vykreslení 13 karet je vlastnost upraveného kódu, nikoli tvrzení o dvojnásobné rychlosti celé aplikace. Tato etapa mění Craft Hub; APK editorů zůstávají ve vydání `touch1`.
+Snížení počtu dotazů z 26 na 13 při vykreslení 13 karet je vlastnost upraveného kódu, nikoli tvrzení o dvojnásobné rychlosti celé aplikace. První etapa změnila Craft Hub; druhá upravuje tabletové lišty PdfCraftu a odstraňuje kopírování názvů všech stránek při každém snímku. Ostatních 11 editorů zůstává ve vydání `touch1`.
 
 ## Obsah
+
+**PdfCraft 0.9.2-tablet2:** větší záložky, zavírací tlačítka a hlavní nástroje; posuvná lišta režimů a spodní navigace dokumentu. V úzkém okně posuňte lištu prstem, abyste dosáhli na další nástroje. Číslo stránky i procento zoomu lze zadat přímo. [Změny a sestavení](android-port/README.md).
+
+Součástí aktualizace je oprava ukládání zpět do Android dokumentů: úspěch se hlásí až po zápisu do zvoleného cíle. Vlastnosti PDF a některé další desktopové dialogy stále potřebují úpravu pro úzké okno.
 
 Vydání **touch1** sjednocuje ovládání prsty ve všech 12 aplikacích: jeden prst posouvá obsah, podržení přibližně půl sekundy a tažení označuje nebo používá zvolený nástroj. Dva prsty současně přibližují a posouvají. Krátká klepnutí a okamžitá práce S Penem zůstávají zachované. Aktualizujte přes **Obnovit → Aktualizovat vše**. [Podrobnosti úpravy a zdrojové patche](android-port/README.md).
 
