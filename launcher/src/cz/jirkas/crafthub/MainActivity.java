@@ -25,6 +25,7 @@ import java.util.concurrent.*;
 public final class MainActivity extends Activity {
     private static final int BG = 0xff121316, INK = 0xfff2f1ee, MUTED = 0xffa0a0a4, LINE = 0xff38393d, BLUE = 0xff74aaff;
     private final ExecutorService network = Executors.newSingleThreadExecutor();
+    private final Net net = new Net();
     private Catalog catalog;
     private Typeface body, heading, mono;
     private TextView connection, summary, state;
@@ -135,7 +136,7 @@ public final class MainActivity extends Activity {
         final String repo = State.repo(this);
         network.execute(() -> {
             try {
-                String json = Net.catalog(repo); Catalog found = Catalog.parse(json);
+                String json = net.catalog(repo); Catalog found = Catalog.parse(json);
                 runOnUiThread(() -> {
                     if (isDestroyed() || !repo.equals(State.repo(this))) return;
                     catalog = found; refreshing = false;
@@ -165,7 +166,7 @@ public final class MainActivity extends Activity {
         for (Catalog.Entry entry : catalog.apps) {
             PackageInfo installed = Packages.installed(this, entry.packageId);
             long code = installed == null ? 0 : installed.getLongVersionCode();
-            String unavailable = Packages.unavailable(this, entry);
+            String unavailable = Packages.unavailable(entry, installed);
             if (!Catalog.SELF.equals(entry.packageId)) { appCount++; if (code > 0) installedCount++; else if (unavailable == null) missing++; }
             if (code > 0 && entry.needsInstall(code) && unavailable == null) updates++;
             LinearLayout card = column(); card.setPadding(dp(16), dp(16), dp(16), dp(14));
@@ -198,8 +199,9 @@ public final class MainActivity extends Activity {
         if (catalog == null) return;
         ArrayList<String> ids = new ArrayList<>();
         for (Catalog.Entry e : catalog.apps) {
-            long installed = Packages.version(this, e.packageId);
-            if (Packages.unavailable(this, e) == null && e.needsInstall(installed)
+            PackageInfo info = Packages.installed(this, e.packageId);
+            long installed = info == null ? 0 : info.getLongVersionCode();
+            if (Packages.unavailable(e, info) == null && e.needsInstall(installed)
                 && (updatesOnly ? installed > 0 : installed == 0 && !Catalog.SELF.equals(e.packageId))) ids.add(e.packageId);
         }
         request(ids);
@@ -275,14 +277,7 @@ public final class MainActivity extends Activity {
     }
 
     private void cancelQueue() {
-        if (InstallService.live != null) startService(new Intent(this, InstallService.class).setAction(InstallService.CANCEL));
-        else {
-            int id = State.prefs(this).getInt("session", -1);
-            if (id != -1) try { getPackageManager().getPackageInstaller().abandonSession(id); } catch (RuntimeException ignored) { }
-            State.pending(this, Collections.emptyList()); State.clearSession(this);
-            State.prefs(this).edit().putString("message", "Fronta byla zrušena.").commit();
-            getSystemService(NotificationManager.class).cancel(InstallService.NOTICE); jobChanged();
-        }
+        startService(new Intent(this, InstallService.class).setAction(InstallService.CANCEL));
     }
 
     private void sourceDialog() {
@@ -303,7 +298,7 @@ public final class MainActivity extends Activity {
     }
     private String error(Exception ex) { String s = ex.getMessage(); return s == null ? ex.getClass().getSimpleName() : s; }
     private void alert(String title, String message) { if (!isFinishing()) new AlertDialog.Builder(this).setTitle(title).setMessage(message).setPositiveButton("OK", null).show(); }
-    @Override protected void onResume() { super.onResume(); resumed = true; InstallService.listener = listener; jobChanged(); }
+    @Override protected void onResume() { super.onResume(); resumed = true; jobMarker = ""; InstallService.listener = listener; jobChanged(); }
     @Override protected void onPause() { resumed = false; if (InstallService.listener == listener) InstallService.listener = null; super.onPause(); }
-    @Override protected void onDestroy() { network.shutdownNow(); super.onDestroy(); }
+    @Override protected void onDestroy() { net.cancel(); network.shutdownNow(); super.onDestroy(); }
 }

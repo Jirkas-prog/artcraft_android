@@ -1,5 +1,17 @@
 # Ověření sestavení
 
+## Craft Hub 1.0.2 — 19. 10. 2026
+
+- 78 automatických kontrol parseru a skutečného downloaderu. Nové scénáře ověřují pokračování po zkráceném přenosu a timeoutu, správný rozsah HTTP 206, server ignorující Range (200), chybný Content-Range, poškození uloženého začátku i celého souboru, odpojení blokovaného čtení a současně spuštěné náhradní stahování. Zůstávají kontroly původních bezpečnostních hranic a podpisu.
+- Test s řízeným přenosem po zachování všech bajtů kromě posledního následně přečetl ze sítě právě jeden bajt; SHA-256 celku souhlasil. Kompletní ověřená kopie nevyvolala další síťový požadavek. To je měření přenesených dat testovacího scénáře, nikoli měření rychlosti sítě na tabletu.
+- Veřejný GitHub zdroj při požadavku na rozsah 0–1023 vrátil HTTP 206 a přesně 1024 bajtů.
+- Android 15 / API 35, izolovaný emulátor: po odinstalování GridCraftu mimo Hub se při návratu do stejné aktivity změnil počet instalací z 12 na 11 bez ručního obnovení katalogu.
+- Ověřeno odmítnutí systémového instalačního dialogu a následné zrušení pozastavené fronty. Zrušení odstranilo vložené částečné APK z cache, zbytek cache ponechalo a aplikace zůstala ovladatelná.
+- Při nedostupné síti a ukončení procesu zůstal zachovaný záznam fronty i 6 279 614 bajtů ze souboru GridCraftu o velikosti 12 559 228 bajtů. Po návratu připojení a pokračování proběhlo stažení, ověření a potvrzená instalace z veřejného katalogu. Android eviduje `cz.jirkas.crafthub` jako instalátor verze `16779265`.
+- Release APK `10002` ověřeno pomocí `apksigner`; používá stejný certifikát jako předchozí vydání. Testovací APK `9998` z aktuálního zdroje slouží pouze ke kontrole vlastní aktualizace a nepatří do katalogu.
+
+Na fyzickém Galaxy Tab S9 nebyl výkon měřen. Nenaměřené optimalizace editorů jsou vedeny odděleně v seznamu v README; tato verze jejich binární soubory nemění.
+
 ## Aktualizace ovládání touch1 — 18. 10. 2026
 
 - Všech 12 Android obalů má vyšší versionCode a příponu verze `-touch1`; přesné hodnoty jsou v [android-port/release.json](android-port/release.json). Podpisový certifikát zůstává stejný pro aktualizaci existujících instalací.

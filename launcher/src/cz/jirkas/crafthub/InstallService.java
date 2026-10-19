@@ -9,6 +9,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /** One user-started queue, one APK/session at a time. The remaining IDs survive process death. */
 public final class InstallService extends Service {
@@ -24,7 +25,10 @@ public final class InstallService extends Service {
     private boolean busy;
     private volatile boolean cancelled;
     private final Handler main = new Handler(Looper.getMainLooper());
-    private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    // Serial across service instances: a cancelled worker must finish before a new queue writes state.
+    private static final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private Future<?> job;
+    private final Net net = new Net();
     private List<Catalog.Entry> queue = new ArrayList<>();
     private String repository;
     private int total;
@@ -35,9 +39,15 @@ public final class InstallService extends Service {
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) { stopSelf(); return START_NOT_STICKY; }
         if (CANCEL.equals(intent.getAction())) {
+            live = this;
             cancelled = true;
-            abandon();
-            State.pending(this, Collections.emptyList());
+            net.cancel();
+            if (job != null) job.cancel(true);
+            worker.execute(() -> {
+                abandon(); State.pending(this, Collections.emptyList()); Net.clearDownloads(getCacheDir());
+                main.post(InstallService::changed);
+            });
+            getSystemService(NotificationManager.class).cancel(NOTICE);
             finish("Fronta byla zrušena.", false);
             return START_NOT_STICKY;
         }
@@ -48,24 +58,25 @@ public final class InstallService extends Service {
         live = this;
         channels(this);
         startForeground(NOTICE, notification(this, message, -1, null, true));
-        if (!State.pending(this, ids)) { finish("Nelze uložit frontu. Zkontrolujte volné místo.", true); return START_NOT_STICKY; }
         repository = State.repo(this);
-        worker.execute(() -> {
+        job = worker.submit(() -> {
             try {
+                checkCancelled();
+                if (!State.pending(this, ids)) throw new IOException("Nelze uložit frontu. Zkontrolujte volné místo.");
                 // Only sessions owned by this app are abandoned, when the user resumes/retries a lost queue.
                 for (PackageInstaller.SessionInfo old : getPackageManager().getPackageInstaller().getMySessions()) {
                     try { getPackageManager().getPackageInstaller().abandonSession(old.getSessionId()); }
                     catch (RuntimeException ignored) { /* The OS may already have completed it. */ }
                 }
                 State.clearSession(this);
-                File[] leftovers = getCacheDir().listFiles((dir, name) -> name.startsWith("craft-") && name.endsWith(".apk"));
-                if (leftovers != null) for (File file : leftovers) file.delete();
-                String json = Net.catalog(repository);
+                String json = net.catalog(repository);
+                checkCancelled();
                 Catalog catalog = Catalog.parse(json);
                 queue = catalog.select(ids);
                 total = queue.size();
                 State.prefs(this).edit().putString("catalog", json).putString("catalogRepo", repository).apply();
                 saveQueue();
+                main.post(InstallService::changed);
                 installNext();
             } catch (Exception ex) { failed(ex); }
         });
@@ -94,7 +105,7 @@ public final class InstallService extends Service {
             if (!getPackageManager().canRequestPackageInstalls()) throw new IOException("Povolte aplikaci Craft Hub instalaci neznámých aplikací.");
             String prefix = (total - queue.size() + 1) + "/" + total + " · " + entry.name;
             report(prefix + " – stahování…", 0);
-            File apk = Net.download(repository, entry, getCacheDir(), (done, size) -> {
+            File apk = net.download(repository, entry, getCacheDir(), (done, size) -> {
                 checkCancelled();
                 long now = SystemClock.elapsedRealtime();
                 if (now - lastProgress > 350 || done == size) {
@@ -166,7 +177,7 @@ public final class InstallService extends Service {
             State.completed(this);
             if (!queue.isEmpty()) queue.remove(0);
             changed();
-            worker.execute(this::installNext);
+            job = worker.submit(this::installNext);
         } else {
             confirmation = null;
             String detail = result.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
@@ -233,12 +244,15 @@ public final class InstallService extends Service {
     }
     @Override public void onTimeout(int startId, int fgsType) {
         cancelled = true;
-        abandon();
+        net.cancel();
+        if (job != null) job.cancel(true);
+        worker.execute(this::abandon);
         finish("Android ukončil dlouhou instalaci. Zbytek fronty lze znovu spustit.", true);
     }
     @Override public void onDestroy() {
         cancelled = true;
-        worker.shutdownNow();
+        net.cancel();
+        if (job != null) job.cancel(true);
         if (live == this) { live = null; changed(); }
         super.onDestroy();
     }

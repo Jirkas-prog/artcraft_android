@@ -22,7 +22,7 @@ sudo apt-get install libandroid-json-java  # pouze pro testy v hostitelské JVM
 python3 tools/test.py
 ```
 
-Test spouští skutečný parser a downloader. Zahrnuje neplatné zdroje a přesměrování, číselné rozsahy, cizí podpis, duplicity, pořadí vlastní aktualizace, návrat na starší verzi, poškozené nebo zkrácené APK a úklid po zrušení. Síťové odpovědi jsou v testu řízené; aplikace nemá žádný testovací HTTP server ani výjimku z HTTPS kontroly.
+Test spouští skutečný parser a downloader. Zahrnuje neplatné zdroje a přesměrování, číselné rozsahy, cizí podpis, duplicity, pořadí vlastní aktualizace, návrat na starší verzi, poškozené nebo zkrácené APK, navazování HTTP Range, server ignorující Range, kontrolu celého hashovaného souboru včetně uloženého začátku, blokované čtení při zrušení a okamžité nové stahování. Síťové odpovědi jsou v testu řízené; aplikace nemá žádný testovací HTTP server ani výjimku z HTTPS kontroly.
 
 Před vydáním ověřte i Android běh: první instalaci, odmítnuté oprávnění, potvrzení/zrušení instalátoru, přepnutí do pozadí, restart aplikace, hromadnou aktualizaci a vlastní aktualizaci ze staršího APK. Hostitelský test nenahrazuje systémový instalátor.
 
@@ -36,7 +36,7 @@ Import nových, již podepsaných APK:
 
 ```bash
 python3 tools/publish_catalog.py /slozka/s/novymi-apk
-python3 tools/publish_catalog.py build/craft-hub-10001.apk
+python3 tools/publish_catalog.py build/craft-hub-10002.apk
 python3 tools/test.py
 ```
 
